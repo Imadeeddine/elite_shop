@@ -67,6 +67,7 @@ export const cloudService = {
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
+          id: order.id,
           buyer_id: order.buyerId,
           buyer_name: order.buyerName,
           buyer_phone: order.buyerPhone,
@@ -122,11 +123,12 @@ export const cloudService = {
         buyerPhone: order.buyer_phone,
         totalPrice: order.total_price,
         paymentMethod: order.payment_method,
+        date: order.created_at, // ربط تاريخ الإنشاء بالتاريخ المستخدم في الواجهة
         items: order.items.map((item: any) => ({
           ...item.product,
           cartQuantity: item.quantity,
           price: item.price_at_purchase,
-          reviewsCount: item.product.reviews_count
+          reviewsCount: item.product?.reviews_count || 0
         }))
       }));
     } catch (e) {

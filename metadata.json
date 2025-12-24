@@ -1,0 +1,7 @@
+{
+  "name": "EliteShop Manager & Marketplace",
+  "description": "A professional e-commerce platform with a dedicated admin dashboard for owners and a clean marketplace for buyers.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

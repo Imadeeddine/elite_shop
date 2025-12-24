@@ -115,8 +115,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return [product, ...prev];
       });
-    } catch (e) {
+      return { success: true };
+    } catch (e: any) {
       console.error("Add Product Error:", e);
+      return { success: false, error: e.message || "Unknown error" };
     }
   };
 

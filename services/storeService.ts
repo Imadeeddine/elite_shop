@@ -10,14 +10,32 @@ export const cloudService = {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Fetch Products Error:", error);
+        throw error;
+      }
       return (data || []).map(p => ({
         ...p,
         reviewsCount: p.reviews_count
       }));
     } catch (e) {
       console.error("Fetch Products Error:", e);
+      // If it's a fetch error, it might be project paused
+      if (e instanceof TypeError && e.message === 'Failed to fetch') {
+        throw new Error("تعذر الاتصال بقاعدة البيانات. تأكد من أن مشروع Supabase ليس متوقفاً (Paused) أو جرب تعطيل Ad-blocker.");
+      }
       return [];
+    }
+  },
+
+  async checkConnection() {
+    try {
+      const { data, error } = await supabase.from('products').select('id').limit(1);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error("Connection Check Failed:", e);
+      return false;
     }
   },
 
@@ -35,14 +53,24 @@ export const cloudService = {
           stock: product.stock,
           rating: product.rating,
           reviews_count: product.reviewsCount
-        })
+        }, { onConflict: 'id' })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Add Product Error:", error);
+        throw error;
+      }
       return data;
-    } catch (e) {
-      console.error("Add Product Error:", e);
+    } catch (e: any) {
+      console.error("Add Product Error Details:", e);
+      if (e instanceof TypeError && e.message === 'Failed to fetch') {
+        throw new Error("فشل الاتصال بـ Supabase. يرجى التأكد من أن المشروع فعال (Active) وليس (Paused) في لوحة تحكم Supabase.");
+      }
+      // Check for common Postgres errors if available
+      if (e.code === '42P01') throw new Error("جدول الـ products غير موجود في قاعدة البيانات.");
+      if (e.code === '23505') throw new Error("هذا المنتج موجود مسبقاً.");
+
       throw e;
     }
   },

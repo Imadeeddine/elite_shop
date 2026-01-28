@@ -5,6 +5,7 @@ import { Product } from '../../types';
 import {
   Plus, Search, Edit2, Trash2, X, Upload, Box
 } from 'lucide-react';
+import { cloudService } from '../../services/storeService';
 
 const AdminProducts: React.FC = () => {
   const { products, addProduct, deleteProduct } = useAppState();
@@ -23,6 +24,20 @@ const AdminProducts: React.FC = () => {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'checking' | 'ok' | 'fail'>('idle');
+
+  const checkSupabaseConnection = async () => {
+    setConnectionStatus('checking');
+    try {
+      const isConnected = await cloudService.checkConnection();
+      setConnectionStatus(isConnected ? 'ok' : 'fail');
+      if (!isConnected) {
+        alert("فشل الاتصال بـ Supabase. يرجى التأكد من أن المشروع فعال (Active) في لوحة تحكم Supabase وأن مفاتيح الربط صحيحة.");
+      }
+    } catch (e) {
+      setConnectionStatus('fail');
+    }
+  };
   const handleOpenModal = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
@@ -64,8 +79,10 @@ const AdminProducts: React.FC = () => {
 
     if (result.success) {
       setIsModalOpen(false);
+      alert("تم حفظ المنتج بنجاح!");
     } else {
-      alert(`فشل الحفظ: ${result.error}`);
+      // The result.error now contains our more descriptive message from storeService
+      alert(result.error);
     }
   };
 
@@ -79,13 +96,26 @@ const AdminProducts: React.FC = () => {
           <h1 className="text-3xl font-black text-slate-900 dark:text-white">إدارة السلع</h1>
           <p className="text-slate-500 font-medium">أضف منتجاتك ونظم مخزونك بسهولة</p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-indigo-100 transition-all active:scale-95 group"
-        >
-          <Plus size={20} className="group-hover:rotate-90 transition-transform" />
-          <span className="font-black">إضافة منتج جديد</span>
-        </button>
+        <div className="flex flex-wrap gap-4">
+          <button
+            onClick={checkSupabaseConnection}
+            className={`px-6 py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 font-bold ${connectionStatus === 'ok' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+              connectionStatus === 'fail' ? 'bg-rose-50 text-rose-600 border border-rose-200' :
+                'bg-slate-50 text-slate-600 border border-slate-200'
+              }`}
+          >
+            {connectionStatus === 'checking' ? 'جاري الفحص...' :
+              connectionStatus === 'ok' ? 'الاتصال سليم' :
+                connectionStatus === 'fail' ? 'خطأ في الاتصال' : 'فحص الاتصال'}
+          </button>
+          <button
+            onClick={() => handleOpenModal()}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-indigo-100 transition-all active:scale-95 group"
+          >
+            <Plus size={20} className="group-hover:rotate-90 transition-transform" />
+            <span className="font-black">إضافة منتج جديد</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-dark-900 p-3 rounded-3xl shadow-sm border border-slate-100 dark:border-dark-800 flex items-center">
